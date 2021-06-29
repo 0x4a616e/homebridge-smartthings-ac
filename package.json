@@ -1,16 +1,16 @@
 {
   "private": true,
-  "displayName": "Plugin Name",
-  "name": "homebridge-plugin-name",
+  "displayName": "Homebridge Smartthings AC",
+  "name": "homebridge-smartthings-ac",
   "version": "1.0.0",
-  "description": "A short description about what your plugin does.",
+  "description": "Control your Samsung SmartThings AC using Homebridge.",
   "license": "Apache-2.0",
   "repository": {
     "type": "git",
-    "url": "git://github.com/USERNAME/GITHUB_PROJECT_NAME.git"
+    "url": "git@github.com:0x4a616e/homebridge-samsung-ac.git"
   },
   "bugs": {
-    "url": "https://github.com/USERNAME/GITHUB_PROJECT_NAME/issues"
+    "url": "https://github.com/0x4a616e/homebridge-samsung-ac/issues"
   },
   "engines": {
     "node": ">=10.17.0",
@@ -26,16 +26,18 @@
   "keywords": [
     "homebridge-plugin"
   ],
-  "dependencies": {},
   "devDependencies": {
     "@types/node": "^14.14.31",
     "@typescript-eslint/eslint-plugin": "^4.16.1",
     "@typescript-eslint/parser": "^4.16.1",
     "eslint": "^7.21.0",
-    "homebridge": "^1.3.1",
+    "homebridge": "^1.3.4",
     "nodemon": "^2.0.7",
     "rimraf": "^3.0.2",
     "ts-node": "^9.1.1",
     "typescript": "^4.2.2"
+  },
+  "dependencies": {
+    "homebridge-config-ui-x": "^4.41.1"
   }
 }
