@@ -30,13 +30,13 @@ export class ExampleHomebridgePlatform implements DynamicPlatformPlugin {
   }
 
   private handleDevices(devices: Devices) {
-    this.log.debug("Got devices", devices)
+    this.log.debug('Got devices', devices);
     for (const item of devices.items) {
       const existingAccessory = this.accessories.find(accessory => accessory.UUID === item.deviceId);
       if (existingAccessory) {
-        this.handleExistingDevice(item, existingAccessory)
+        this.handleExistingDevice(item, existingAccessory);
       } else {
-        this.handleNewDevice(item)
+        this.handleNewDevice(item);
       }
     }
   }
