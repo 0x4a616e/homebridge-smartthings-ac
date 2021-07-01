@@ -1,8 +1,8 @@
 import { API, DynamicPlatformPlugin, Logger, PlatformAccessory, PlatformConfig, Service, Characteristic, UnknownContext } from 'homebridge';
 
 import { PLATFORM_NAME, PLUGIN_NAME } from './settings';
-import { ExamplePlatformAccessory } from './platformAccessory';
-import {SmartThingsClient, BearerTokenAuthenticator, Device} from '@smartthings/core-sdk';
+import { SmartThingsAirConditionerAccessory } from './platformAccessory';
+import {SmartThingsClient, BearerTokenAuthenticator, Device, Component, CapabilityReference} from '@smartthings/core-sdk';
 
 
 export class ExampleHomebridgePlatform implements DynamicPlatformPlugin {
@@ -30,22 +30,42 @@ export class ExampleHomebridgePlatform implements DynamicPlatformPlugin {
   }
 
   private handleDevices(devices: Device[]) {
-    this.log.debug('Got new devices', devices);
-    for (const device of devices.filter((device: Device) => device.name === '[room a/c] Samsung')) {
-      this.log.debug('Got new devices', JSON.stringify(device.components));
-
-      const existingAccessory = this.accessories.find(accessory => accessory.UUID === device.deviceId);
-      if (existingAccessory) {
-        this.handleExistingDevice(device, existingAccessory);
-      } else {
-        this.handleNewDevice(device);
+    for (const device of devices) {
+      if (device.components) {
+        const capabilities = this.getCapabilities(device);
+        if (this.isSupportedBy(capabilities)) {
+          this.log.debug('Registering device', device.deviceId);
+          this.handleSupportedDevice(device);
+        } else {
+          this.log.info('Skipping device', device.deviceId);
+        }
       }
+
     }
+  }
+
+  private isSupportedBy(capabilities: string[]) {
+    return SmartThingsAirConditionerAccessory.requiredCapabilities.every(
+      (requiredCapability: string) => capabilities.includes(requiredCapability));
+  }
+
+  private handleSupportedDevice(device: Device) {
+    const existingAccessory = this.accessories.find(accessory => accessory.UUID === device.deviceId);
+    if (existingAccessory) {
+      this.handleExistingDevice(device, existingAccessory);
+    } else {
+      this.handleNewDevice(device);
+    }
+  }
+
+  private getCapabilities(device: Device) {
+    return device.components?.flatMap((component: Component) => component.capabilities)
+      .map((capabilityReference: CapabilityReference) => capabilityReference.id) ?? [];
   }
 
   private handleExistingDevice(device: Device, accesory: PlatformAccessory<UnknownContext>) {
     this.log.info('Restoring existing accessory from cache:', device.label);
-    new ExamplePlatformAccessory(this, accesory);
+    new SmartThingsAirConditionerAccessory(this, accesory);
   }
 
   private handleNewDevice(device: Device) {
@@ -54,19 +74,14 @@ export class ExampleHomebridgePlatform implements DynamicPlatformPlugin {
       const accessory = new this.api.platformAccessory(device.label, device.deviceId);
       accessory.context.device = device;
 
-      new ExamplePlatformAccessory(this, accessory);
+      new SmartThingsAirConditionerAccessory(this, accessory);
       this.api.registerPlatformAccessories(PLUGIN_NAME, PLATFORM_NAME, [accessory]);
     }
   }
 
-  /**
-   * This function is invoked when homebridge restores cached accessories from disk at startup.
-   * It should be used to setup event handlers for characteristics and update respective values.
-   */
   configureAccessory(accessory: PlatformAccessory) {
     this.log.info('Loading accessory from cache:', accessory.displayName);
 
-    // add the restored accessory to the accessories cache so we can track if it has already been registered
     this.accessories.push(accessory);
   }
 }
