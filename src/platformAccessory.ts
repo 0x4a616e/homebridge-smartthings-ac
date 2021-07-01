@@ -1,7 +1,6 @@
 import { CapabilityReference, Component, ComponentStatus, Device, DeviceStatus } from '@smartthings/core-sdk';
 import { CurrentHeaterCoolerState } from 'hap-nodejs/dist/lib/definitions';
 import { Service, PlatformAccessory, CharacteristicValue } from 'homebridge';
-
 import { ExampleHomebridgePlatform } from './platform';
 
 export class SmartThingsAirConditionerAccessory {
@@ -123,7 +122,7 @@ export class SmartThingsAirConditionerAccessory {
       throw new Error('Device id must be set.');
     }
 
-    this.platform.log.debug('Get status for device ', this.device.deviceId);
+    this.platform.log.debug('Get status for device', this.device.deviceId);
     return this.platform.client.devices.getStatus(this.device.deviceId);
   }
 
