@@ -11,10 +11,13 @@ Install the plugin by runnign:
     npm install -g homebridge-smartthings-ac
 
 Generate a SmartThings API token here: https://account.smartthings.com/tokens
+Make sure the token is allowed to list, see and control all devices. Then, your token look similar to this:
+
+    MyToken — x:devices:*, l:devices, r:devices:*
 
 Enter the API token in the plugin settings in homebridge:
 
-![Settings](assets/settings.png)
+![Settings](assets/settings.png | width=300)
 
 Restart HomeBridge.
 
