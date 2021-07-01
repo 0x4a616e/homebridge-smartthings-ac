@@ -2,7 +2,7 @@ import { API, DynamicPlatformPlugin, Logger, PlatformAccessory, PlatformConfig, 
 
 import { PLATFORM_NAME, PLUGIN_NAME } from './settings';
 import { ExamplePlatformAccessory } from './platformAccessory';
-import {SmartThingsClient, BearerTokenAuthenticator, Device} from '@smartthings/core-sdk'
+import {SmartThingsClient, BearerTokenAuthenticator, Device} from '@smartthings/core-sdk';
 
 
 export class ExampleHomebridgePlatform implements DynamicPlatformPlugin {
@@ -10,7 +10,7 @@ export class ExampleHomebridgePlatform implements DynamicPlatformPlugin {
   public readonly Characteristic: typeof Characteristic = this.api.hap.Characteristic;
 
   public readonly accessories: PlatformAccessory[] = [];
-  public readonly client: SmartThingsClient
+  public readonly client: SmartThingsClient;
 
   constructor(
     public readonly log: Logger,
@@ -18,7 +18,7 @@ export class ExampleHomebridgePlatform implements DynamicPlatformPlugin {
     public readonly api: API,
   ) {
     this.log.debug('Loading devices with token:', this.config.token);
-    this.client = new SmartThingsClient(new BearerTokenAuthenticator(this.config.token))
+    this.client = new SmartThingsClient(new BearerTokenAuthenticator(this.config.token));
 
     this.api.on('didFinishLaunching', () => {
       log.debug('Executed didFinishLaunching callback');
@@ -31,7 +31,7 @@ export class ExampleHomebridgePlatform implements DynamicPlatformPlugin {
 
   private handleDevices(devices: Device[]) {
     this.log.debug('Got new devices', devices);
-    for (const device of devices.filter((device: Device) => device.name == "[room a/c] Samsung")) {
+    for (const device of devices.filter((device: Device) => device.name === '[room a/c] Samsung')) {
       this.log.debug('Got new devices', JSON.stringify(device.components));
 
       const existingAccessory = this.accessories.find(accessory => accessory.UUID === device.deviceId);
@@ -51,11 +51,11 @@ export class ExampleHomebridgePlatform implements DynamicPlatformPlugin {
   private handleNewDevice(device: Device) {
     this.log.info('Adding new accessory:', device.label);
     if (device.label && device.deviceId) {
-          const accessory = new this.api.platformAccessory(device.label, device.deviceId);
-          accessory.context.device = device;
-      
-          new ExamplePlatformAccessory(this, accessory);
-          this.api.registerPlatformAccessories(PLUGIN_NAME, PLATFORM_NAME, [accessory]);
+      const accessory = new this.api.platformAccessory(device.label, device.deviceId);
+      accessory.context.device = device;
+
+      new ExamplePlatformAccessory(this, accessory);
+      this.api.registerPlatformAccessories(PLUGIN_NAME, PLATFORM_NAME, [accessory]);
     }
   }
 
