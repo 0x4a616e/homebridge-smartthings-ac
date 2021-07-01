@@ -2,9 +2,7 @@ import { API, DynamicPlatformPlugin, Logger, PlatformAccessory, PlatformConfig, 
 
 import { PLATFORM_NAME, PLUGIN_NAME } from './settings';
 import { ExamplePlatformAccessory } from './platformAccessory';
-import { Backend } from './api/backend';
-import { Devices } from './api/model/Devices';
-import { Item } from './api/model/Item';
+import {SmartThingsClient, BearerTokenAuthenticator, Device} from '@smartthings/core-sdk'
 
 
 export class ExampleHomebridgePlatform implements DynamicPlatformPlugin {
@@ -12,6 +10,7 @@ export class ExampleHomebridgePlatform implements DynamicPlatformPlugin {
   public readonly Characteristic: typeof Characteristic = this.api.hap.Characteristic;
 
   public readonly accessories: PlatformAccessory[] = [];
+  public readonly client: SmartThingsClient
 
   constructor(
     public readonly log: Logger,
@@ -19,41 +18,45 @@ export class ExampleHomebridgePlatform implements DynamicPlatformPlugin {
     public readonly api: API,
   ) {
     this.log.debug('Loading devices with token:', this.config.token);
+    this.client = new SmartThingsClient(new BearerTokenAuthenticator(this.config.token))
 
     this.api.on('didFinishLaunching', () => {
       log.debug('Executed didFinishLaunching callback');
 
-      new Backend(config, log).getDevices()
-        .then((devices: Devices) => this.handleDevices(devices))
+      this.client.devices.list()
+        .then((devices: Device[]) => this.handleDevices(devices))
         .catch(err => log.error('Cannot load devices', err));
     });
   }
 
-  private handleDevices(devices: Devices) {
-    this.log.debug('Got devices', devices);
-    for (const item of devices.items) {
-      const existingAccessory = this.accessories.find(accessory => accessory.UUID === item.deviceId);
+  private handleDevices(devices: Device[]) {
+    this.log.debug('Got new devices', devices);
+    for (const device of devices.filter((device: Device) => device.name == "[room a/c] Samsung")) {
+      this.log.debug('Got new devices', JSON.stringify(device.components));
+
+      const existingAccessory = this.accessories.find(accessory => accessory.UUID === device.deviceId);
       if (existingAccessory) {
-        this.handleExistingDevice(item, existingAccessory);
+        this.handleExistingDevice(device, existingAccessory);
       } else {
-        this.handleNewDevice(item);
+        this.handleNewDevice(device);
       }
     }
   }
 
-  private handleExistingDevice(item: Item, accesory: PlatformAccessory<UnknownContext>) {
-    this.log.info('Restoring existing accessory from cache:', item.label);
+  private handleExistingDevice(device: Device, accesory: PlatformAccessory<UnknownContext>) {
+    this.log.info('Restoring existing accessory from cache:', device.label);
     new ExamplePlatformAccessory(this, accesory);
   }
 
-  private handleNewDevice(item: Item) {
-    this.log.info('Adding new accessory:', item.label);
-
-    const accessory = new this.api.platformAccessory(item.label, item.deviceId);
-    accessory.context.device = item;
-
-    new ExamplePlatformAccessory(this, accessory);
-    this.api.registerPlatformAccessories(PLUGIN_NAME, PLATFORM_NAME, [accessory]);
+  private handleNewDevice(device: Device) {
+    this.log.info('Adding new accessory:', device.label);
+    if (device.label && device.deviceId) {
+          const accessory = new this.api.platformAccessory(device.label, device.deviceId);
+          accessory.context.device = device;
+      
+          new ExamplePlatformAccessory(this, accessory);
+          this.api.registerPlatformAccessories(PLUGIN_NAME, PLATFORM_NAME, [accessory]);
+    }
   }
 
   /**
