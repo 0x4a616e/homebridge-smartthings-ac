@@ -1,21 +1,19 @@
-import { CapabilityReference, Component, ComponentStatus, Device, DeviceStatus } from '@smartthings/core-sdk';
-import { CurrentHeaterCoolerState } from 'hap-nodejs/dist/lib/definitions';
+import { ComponentStatus, Device, DeviceStatus } from '@smartthings/core-sdk';
+import { TargetHeaterCoolerState } from 'hap-nodejs/dist/lib/definitions';
 import { Service, PlatformAccessory, CharacteristicValue } from 'homebridge';
-import { ExampleHomebridgePlatform } from './platform';
+import { SmartThingsPlatform } from './platform';
 
 export class SmartThingsAirConditionerAccessory {
   private service: Service;
   private device: Device;
 
-  public static readonly requiredCapabilities = ['switch', 'temperatureMeasurement', 'thermostatCoolingSetpoint'];
+  public static readonly requiredCapabilities = ['switch', 'temperatureMeasurement', 'thermostatCoolingSetpoint', 'airConditionerMode'];
 
   constructor(
-    private readonly platform: ExampleHomebridgePlatform,
+    private readonly platform: SmartThingsPlatform,
     private readonly accessory: PlatformAccessory,
   ) {
     this.device = accessory.context.device as Device;
-
-    const supportedCapabilites = this.getCapabilities(this.device);
 
     this.accessory.getService(this.platform.Service.AccessoryInformation)!
       .setCharacteristic(this.platform.Characteristic.Manufacturer, this.device.manufacturerName ?? 'unknown')
@@ -51,15 +49,9 @@ export class SmartThingsAirConditionerAccessory {
     this.service.getCharacteristic(this.platform.Characteristic.CurrentTemperature)
       .onGet(this.getCurrentTemperature.bind(this));
 
-    if (supportedCapabilites.includes('airConditionerMode')) {
-      this.service.getCharacteristic(this.platform.Characteristic.CurrentHeaterCoolerState)
-        .onGet(this.getHeaterCoolerState.bind(this));
-    }
-  }
-
-  private getCapabilities(device: Device) : string[] {
-    return device.components?.flatMap((component: Component) => component.capabilities)
-      .map((capabilityReference: CapabilityReference) => capabilityReference.id) ?? [];
+    this.service.getCharacteristic(this.platform.Characteristic.TargetHeaterCoolerState)
+      .onGet(this.getHeaterCoolerState.bind(this))
+      .onSet(this.setHeaterCoolerState.bind(this));
   }
 
   async getHeaterCoolerState(): Promise<CharacteristicValue> {
@@ -68,15 +60,15 @@ export class SmartThingsAirConditionerAccessory {
     this.platform.log.debug('Mode', state);
 
     switch (state) {
-      case 'aIComfort': return CurrentHeaterCoolerState.IDLE;
-      case 'cool': return CurrentHeaterCoolerState.COOLING;
-      case 'dry': return CurrentHeaterCoolerState.IDLE;
-      case 'wind': return CurrentHeaterCoolerState.COOLING;
-      case 'auto': return CurrentHeaterCoolerState.COOLING;
-      case 'heat': return CurrentHeaterCoolerState.HEATING;
+      case 'aIComfort': return TargetHeaterCoolerState.AUTO;
+      case 'cool': return TargetHeaterCoolerState.COOL;
+      case 'dry': return TargetHeaterCoolerState.AUTO;
+      case 'wind': return TargetHeaterCoolerState.AUTO;
+      case 'auto': return TargetHeaterCoolerState.AUTO;
+      case 'heat': return TargetHeaterCoolerState.HEAT;
     }
 
-    return CurrentHeaterCoolerState.INACTIVE;
+    return TargetHeaterCoolerState.AUTO;
   }
 
   async getCoolingTemperature(): Promise<CharacteristicValue> {
@@ -86,8 +78,19 @@ export class SmartThingsAirConditionerAccessory {
     return temperature as number;
   }
 
+  async setHeaterCoolerState(value: CharacteristicValue) {
+    let mode = '';
+    switch(value){
+      case TargetHeaterCoolerState.HEAT: mode = 'heat'; break;
+      case TargetHeaterCoolerState.COOL: mode = 'cool'; break;
+      case TargetHeaterCoolerState.AUTO: mode = 'auto'; break;
+    }
+
+    this.executeMainCommand('setAirConditionerMode', 'airConditionerMode', [ mode ]);
+  }
+
   async setCoolingTemperature(value: CharacteristicValue) {
-    this.executeMainCommand('setCoolingSetpoint', 'thermostatCoolingSetpoint', [ value as number ]);
+    this.executeMainCommand('setCoolingSetpoint', 'thermostatCoolingSetpoint', [value as number]);
   }
 
   async getCurrentTemperature(): Promise<CharacteristicValue> {
@@ -113,7 +116,6 @@ export class SmartThingsAirConditionerAccessory {
     if (!status.components) {
       throw Error('Cannot get device status');
     }
-
     return status.components['main'];
   }
 

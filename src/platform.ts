@@ -5,7 +5,7 @@ import { SmartThingsAirConditionerAccessory } from './platformAccessory';
 import {SmartThingsClient, BearerTokenAuthenticator, Device, Component, CapabilityReference} from '@smartthings/core-sdk';
 
 
-export class ExampleHomebridgePlatform implements DynamicPlatformPlugin {
+export class SmartThingsPlatform implements DynamicPlatformPlugin {
   public readonly Service: typeof Service = this.api.hap.Service;
   public readonly Characteristic: typeof Characteristic = this.api.hap.Characteristic;
 

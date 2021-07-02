@@ -19,7 +19,7 @@ Make sure the token is allowed to
 
 all devices. 
 
-Then, your token look similar to this:
+Then, your token should look something like this:
 
     MyToken — x:devices:*, l:devices, r:devices:*
 

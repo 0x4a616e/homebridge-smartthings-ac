@@ -1,8 +1,8 @@
 import { API } from 'homebridge';
 
 import { PLATFORM_NAME } from './settings';
-import { ExampleHomebridgePlatform } from './platform';
+import { SmartThingsPlatform } from './platform';
 
 export = (api: API) => {
-  api.registerPlatform(PLATFORM_NAME, ExampleHomebridgePlatform);
+  api.registerPlatform(PLATFORM_NAME, SmartThingsPlatform);
 };

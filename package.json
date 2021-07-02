@@ -38,7 +38,6 @@
   },
   "dependencies": {
     "@smartthings/core-sdk": "^1.8.1",
-    "hap-nodejs": "^0.9.4",
     "homebridge-config-ui-x": "^4.41.1"
   }
 }
