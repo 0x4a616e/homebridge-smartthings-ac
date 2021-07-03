@@ -54,57 +54,42 @@ export class SmartThingsAirConditionerAccessory {
       .onSet(this.setHeaterCoolerState.bind(this));
   }
 
-  async getHeaterCoolerState(): Promise<CharacteristicValue> {
+  private async getHeaterCoolerState(): Promise<CharacteristicValue> {
     const mainComponent = await this.getMainComponent();
     const state = mainComponent['airConditionerMode']['airConditionerMode']['value'];
-    this.platform.log.debug('Mode', state);
 
-    switch (state) {
-      case 'aIComfort': return TargetHeaterCoolerState.AUTO;
-      case 'cool': return TargetHeaterCoolerState.COOL;
-      case 'dry': return TargetHeaterCoolerState.AUTO;
-      case 'wind': return TargetHeaterCoolerState.AUTO;
-      case 'auto': return TargetHeaterCoolerState.AUTO;
-      case 'heat': return TargetHeaterCoolerState.HEAT;
-    }
-
-    return TargetHeaterCoolerState.AUTO;
+    return this.fromSmartThingsMode(state as string);
   }
 
-  async getCoolingTemperature(): Promise<CharacteristicValue> {
+  private async getCoolingTemperature(): Promise<CharacteristicValue> {
     const mainComponent = await this.getMainComponent();
     const temperature = mainComponent['thermostatCoolingSetpoint']['coolingSetpoint']['value'];
 
     return temperature as number;
   }
 
-  async setHeaterCoolerState(value: CharacteristicValue) {
-    let mode = '';
-    switch(value){
-      case TargetHeaterCoolerState.HEAT: mode = 'heat'; break;
-      case TargetHeaterCoolerState.COOL: mode = 'cool'; break;
-      case TargetHeaterCoolerState.AUTO: mode = 'auto'; break;
-    }
+  private async setHeaterCoolerState(value: CharacteristicValue) {
+    const mode = this.toSmartThingsMode(value);
 
     this.executeMainCommand('setAirConditionerMode', 'airConditionerMode', [ mode ]);
   }
 
-  async setCoolingTemperature(value: CharacteristicValue) {
+  private async setCoolingTemperature(value: CharacteristicValue) {
     this.executeMainCommand('setCoolingSetpoint', 'thermostatCoolingSetpoint', [value as number]);
   }
 
-  async getCurrentTemperature(): Promise<CharacteristicValue> {
+  private async getCurrentTemperature(): Promise<CharacteristicValue> {
     const mainComponent = await this.getMainComponent();
     const temperature = mainComponent['temperatureMeasurement']['temperature']['value'];
 
     return temperature as number;
   }
 
-  async setActive(value: CharacteristicValue) {
+  private async setActive(value: CharacteristicValue) {
     this.executeMainCommand(value === 1 ? 'on' : 'off', 'switch');
   }
 
-  async getActive(): Promise<CharacteristicValue> {
+  private async getActive(): Promise<CharacteristicValue> {
     const mainComponent = await this.getMainComponent();
 
     return mainComponent['switch']['switch']['value'] === 'on';
@@ -146,5 +131,25 @@ export class SmartThingsAirConditionerAccessory {
     if (status.status !== 'success') {
       throw Error('Command failed with status ' + status.status);
     }
+  }
+
+  private toSmartThingsMode(value: CharacteristicValue) {
+    switch (value) {
+      case TargetHeaterCoolerState.HEAT: return 'heat';
+      case TargetHeaterCoolerState.COOL: return 'cool';
+      case TargetHeaterCoolerState.AUTO: return 'auto';
+    }
+
+    return TargetHeaterCoolerState.AUTO;
+  }
+
+  private fromSmartThingsMode(state: string) {
+    switch (state) {
+      case 'cool': return TargetHeaterCoolerState.COOL;
+      case 'auto': return TargetHeaterCoolerState.AUTO;
+      case 'heat': return TargetHeaterCoolerState.HEAT;
+    }
+
+    return TargetHeaterCoolerState.AUTO;
   }
 }
