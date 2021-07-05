@@ -6,24 +6,24 @@ Control you Samsung SmartThings air conditioner with HomeKit using HomeBridge.
 
 ## Setup the Plugin
 
-Install the plugin by runnign:
+Install the plugin by running:
 
-    npm install -g homebridge-smartthings-ac
+    sudo npm install -g homebridge-smartthings-ac
 
-Generate a SmartThings API token here: https://account.smartthings.com/tokens
+To communicate with your SmartThings devices, you need to generate a SmartThings API token here: https://account.smartthings.com/tokens
 Make sure the token is allowed to 
 
 * list 
 * see 
 * control 
 
-all devices. 
+all devices.
 
-Then, your token should look something like this:
+If everything is set up correctly, the permissions of your token should look something like this:
 
     MyToken — x:devices:*, l:devices, r:devices:*
-
-Enter the API token in the plugin settings in homebridge:
+    
+The generated API token will look like `7b2c425a-13ab-4e6f-ba42-0b11d21ba6e0`. Copy this token and paste it into plugin settings dialog in homebridge:
 
 ![Settings](assets/settings.png)
 
