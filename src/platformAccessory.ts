@@ -143,7 +143,7 @@ export class SmartThingsAirConditionerAccessory {
     return 'auto';
   }
 
-  private fromSmartThingsMode(state: string): TargetHeaterCoolerState {
+  private fromSmartThingsMode(state: string): CharacteristicValue {
     switch (state) {
       case 'cool': return TargetHeaterCoolerState.COOL;
       case 'auto': return TargetHeaterCoolerState.AUTO;
