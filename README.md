@@ -22,7 +22,7 @@ If everything is set up correctly, the scope of your token should look something
 
     MyToken — x:devices:*, l:devices, r:devices:*
     
-The generated API token will look like `7b2c425a-13ab-4e6f-ba42-0b11d21ba6e0`. Copy this token and paste it into plugin settings dialog in homebridge:
+The generated API token will look like `7b2c425a-13ab-4e6f-ba42-0b11d21ba6e0`. Copy this token and paste it into the plugin settings dialog in homebridge:
 
 ![Settings](assets/settings.png)
 
