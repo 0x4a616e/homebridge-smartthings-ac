@@ -1,6 +1,7 @@
-import { ComponentStatus, Device, DeviceStatus } from '@smartthings/core-sdk';
+import { Device } from '@smartthings/core-sdk';
 import { TargetHeaterCoolerState } from 'hap-nodejs/dist/lib/definitions';
 import { Service, PlatformAccessory, CharacteristicValue } from 'homebridge';
+import { DeviceAdapter } from './deviceAdapter';
 import { SmartThingsPlatform } from './platform';
 
 export class SmartThingsAirConditionerAccessory {
@@ -12,6 +13,7 @@ export class SmartThingsAirConditionerAccessory {
   constructor(
     private readonly platform: SmartThingsPlatform,
     private readonly accessory: PlatformAccessory,
+    private readonly deviceAdapter: DeviceAdapter,
   ) {
     this.device = accessory.context.device as Device;
 
@@ -55,14 +57,14 @@ export class SmartThingsAirConditionerAccessory {
   }
 
   private async getHeaterCoolerState(): Promise<CharacteristicValue> {
-    const mainComponent = await this.getMainComponent();
+    const mainComponent = await this.deviceAdapter.getMainComponent();
     const state = mainComponent['airConditionerMode']['airConditionerMode']['value'];
 
     return this.fromSmartThingsMode(state as string);
   }
 
   private async getCoolingTemperature(): Promise<CharacteristicValue> {
-    const mainComponent = await this.getMainComponent();
+    const mainComponent = await this.deviceAdapter.getMainComponent();
     const temperature = mainComponent['thermostatCoolingSetpoint']['coolingSetpoint']['value'];
 
     return temperature as number;
@@ -71,66 +73,28 @@ export class SmartThingsAirConditionerAccessory {
   private async setHeaterCoolerState(value: CharacteristicValue) {
     const mode = this.toSmartThingsMode(value);
 
-    this.executeMainCommand('setAirConditionerMode', 'airConditionerMode', [ mode ]);
+    this.deviceAdapter.executeMainCommand('setAirConditionerMode', 'airConditionerMode', [ mode ]);
   }
 
   private async setCoolingTemperature(value: CharacteristicValue) {
-    this.executeMainCommand('setCoolingSetpoint', 'thermostatCoolingSetpoint', [value as number]);
+    this.deviceAdapter.executeMainCommand('setCoolingSetpoint', 'thermostatCoolingSetpoint', [value as number]);
   }
 
   private async getCurrentTemperature(): Promise<CharacteristicValue> {
-    const mainComponent = await this.getMainComponent();
+    const mainComponent = await this.deviceAdapter.getMainComponent();
     const temperature = mainComponent['temperatureMeasurement']['temperature']['value'];
 
     return temperature as number;
   }
 
   private async setActive(value: CharacteristicValue) {
-    this.executeMainCommand(value === 1 ? 'on' : 'off', 'switch');
+    this.deviceAdapter.executeMainCommand(value === 1 ? 'on' : 'off', 'switch');
   }
 
   private async getActive(): Promise<CharacteristicValue> {
-    const mainComponent = await this.getMainComponent();
+    const mainComponent = await this.deviceAdapter.getMainComponent();
 
     return mainComponent['switch']['switch']['value'] === 'on';
-  }
-
-  private async getMainComponent(): Promise<ComponentStatus> {
-    const status = await this.getStatus();
-
-    if (!status.components) {
-      throw Error('Cannot get device status');
-    }
-    return status.components['main'];
-  }
-
-  private getStatus(): Promise<DeviceStatus> {
-    if (!this.device.deviceId) {
-      throw new Error('Device id must be set.');
-    }
-
-    this.platform.log.debug('Get status for device', this.device.deviceId);
-    return this.platform.client.devices.getStatus(this.device.deviceId);
-  }
-
-  private async executeMainCommand(command: string, capability: string, commandArguments?: (string | number)[]) {
-    if (!this.device.deviceId) {
-      throw Error('Device ID must be set');
-    }
-
-    this.platform.log.debug('Executing command', capability, command);
-
-    const status = await this.platform.client.devices.executeCommand(this.device.deviceId, {
-      component: 'main',
-      command: command,
-      capability: capability,
-      arguments: commandArguments,
-    });
-
-    this.platform.log.debug('Command executed with status', status.status);
-    if (status.status !== 'success') {
-      throw Error('Command failed with status ' + status.status);
-    }
   }
 
   private toSmartThingsMode(value: CharacteristicValue): string {

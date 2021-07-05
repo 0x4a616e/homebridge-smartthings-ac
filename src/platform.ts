@@ -2,15 +2,16 @@ import { API, DynamicPlatformPlugin, Logger, PlatformAccessory, PlatformConfig, 
 
 import { PLATFORM_NAME, PLUGIN_NAME } from './settings';
 import { SmartThingsAirConditionerAccessory } from './platformAccessory';
-import {SmartThingsClient, BearerTokenAuthenticator, Device, Component, CapabilityReference} from '@smartthings/core-sdk';
+import {BearerTokenAuthenticator, Device, Component, CapabilityReference, SmartThingsClient} from '@smartthings/core-sdk';
+import { DeviceAdapter } from './deviceAdapter';
 
 
 export class SmartThingsPlatform implements DynamicPlatformPlugin {
   public readonly Service: typeof Service = this.api.hap.Service;
   public readonly Characteristic: typeof Characteristic = this.api.hap.Characteristic;
 
-  public readonly accessories: PlatformAccessory[] = [];
-  public readonly client: SmartThingsClient;
+  private readonly accessories: PlatformAccessory[] = [];
+  private readonly client: SmartThingsClient;
 
   constructor(
     public readonly log: Logger,
@@ -37,14 +38,13 @@ export class SmartThingsPlatform implements DynamicPlatformPlugin {
     for (const device of devices) {
       if (device.components) {
         const capabilities = this.getCapabilities(device);
-        if (this.isSupportedBy(capabilities)) {
-          this.log.debug('Registering device', device.deviceId);
+        if (device.deviceId && this.isSupportedBy(capabilities) ) {
+          this.log.info('Registering device', device.deviceId);
           this.handleSupportedDevice(device);
         } else {
-          this.log.info('Skipping device', device.deviceId);
+          this.log.info('Skipping device', device.deviceId, device.label);
         }
       }
-
     }
   }
 
@@ -67,20 +67,32 @@ export class SmartThingsPlatform implements DynamicPlatformPlugin {
       .map((capabilityReference: CapabilityReference) => capabilityReference.id) ?? [];
   }
 
-  private handleExistingDevice(device: Device, accesory: PlatformAccessory<UnknownContext>) {
+  private handleExistingDevice(device: Device, accessory: PlatformAccessory<UnknownContext>) {
     this.log.info('Restoring existing accessory from cache:', device.label);
-    new SmartThingsAirConditionerAccessory(this, accesory);
+    this.createSmartThingsAccessory(accessory, device);
   }
 
   private handleNewDevice(device: Device) {
     this.log.info('Adding new accessory:', device.label);
+    const accessory = this.createPlatformAccessory(device);
+
+    this.createSmartThingsAccessory(accessory, device);
+    this.api.registerPlatformAccessories(PLUGIN_NAME, PLATFORM_NAME, [accessory]);
+  }
+
+  private createPlatformAccessory(device: Device): PlatformAccessory<UnknownContext> {
     if (device.label && device.deviceId) {
       const accessory = new this.api.platformAccessory(device.label, device.deviceId);
       accessory.context.device = device;
-
-      new SmartThingsAirConditionerAccessory(this, accessory);
-      this.api.registerPlatformAccessories(PLUGIN_NAME, PLATFORM_NAME, [accessory]);
+      return accessory;
     }
+
+    throw new Error('Missing label and id.');
+  }
+
+  private createSmartThingsAccessory(accessory: PlatformAccessory<UnknownContext>, device: Device) {
+    const deviceAdapter = new DeviceAdapter(device, this.log, this.client);
+    new SmartThingsAirConditionerAccessory(this, accessory, deviceAdapter);
   }
 
   configureAccessory(accessory: PlatformAccessory) {
