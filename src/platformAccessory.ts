@@ -30,21 +30,19 @@ export class SmartThingsAirConditionerAccessory {
       .onSet(this.setActive.bind(this))
       .onGet(this.getActive.bind(this));
 
+    const temperatureProperties = {
+      maxValue: this.platform.config.maxTemperature,
+      minValue: this.platform.config.minTemperature,
+      minStep: 1,
+    };
+
     this.service.getCharacteristic(this.platform.Characteristic.HeatingThresholdTemperature)
-      .setProps({
-        maxValue: 30,
-        minValue: 16,
-        minStep: 1,
-      })
+      .setProps(temperatureProperties)
       .onGet(this.getCoolingTemperature.bind(this))
       .onSet(this.setCoolingTemperature.bind(this));
 
     this.service.getCharacteristic(this.platform.Characteristic.CoolingThresholdTemperature)
-      .setProps({
-        maxValue: 30,
-        minValue: 16,
-        minStep: 1,
-      })
+      .setProps(temperatureProperties)
       .onGet(this.getCoolingTemperature.bind(this))
       .onSet(this.setCoolingTemperature.bind(this));
 

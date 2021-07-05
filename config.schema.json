@@ -10,6 +10,22 @@
         "type": "string",
         "required": true,
         "default": ""
+      },
+      "minTemperature": {
+        "title": "Minimum temperature",
+        "type": "integer",
+        "required": true,
+        "default": 16,
+        "minimum": 16,
+        "maximum": 30
+      },
+      "maxTemperature": {
+        "title": "Maximum temperature",
+        "type": "integer",
+        "required": true,
+        "default": 30,
+        "minimum": 16,
+        "maximum": 30
       }
     }
   }
