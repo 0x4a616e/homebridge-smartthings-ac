@@ -9,7 +9,7 @@
         "title": "API Token",
         "type": "string",
         "required": true,
-        "default": "xxx-xxx-xxx-xxx"
+        "default": ""
       }
     }
   }

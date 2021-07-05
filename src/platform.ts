@@ -17,16 +17,20 @@ export class SmartThingsPlatform implements DynamicPlatformPlugin {
     public readonly config: PlatformConfig,
     public readonly api: API,
   ) {
-    this.log.debug('Loading devices with token:', this.config.token);
-    this.client = new SmartThingsClient(new BearerTokenAuthenticator(this.config.token));
+    const token = this.config.token as string;
+    this.client = new SmartThingsClient(new BearerTokenAuthenticator(token));
 
-    this.api.on('didFinishLaunching', () => {
-      log.debug('Executed didFinishLaunching callback');
+    if (token?.trim()) {
+      this.log.debug('Loading devices with token:', token);
 
-      this.client.devices.list()
-        .then((devices: Device[]) => this.handleDevices(devices))
-        .catch(err => log.error('Cannot load devices', err));
-    });
+      this.api.on('didFinishLaunching', () => {
+        this.client.devices.list()
+          .then((devices: Device[]) => this.handleDevices(devices))
+          .catch(err => log.error('Cannot load devices', err));
+      });
+    } else {
+      this.log.warn('Please congigure your API token and restart homebridge.');
+    }
   }
 
   private handleDevices(devices: Device[]) {
