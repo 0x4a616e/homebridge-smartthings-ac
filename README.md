@@ -11,15 +11,14 @@ Install the plugin by running:
     sudo npm install -g homebridge-smartthings-ac
 
 To communicate with your SmartThings devices, you need to generate a SmartThings API token here: https://account.smartthings.com/tokens
-Make sure the token is allowed to 
 
-* list 
-* see 
-* control 
+Log in with your Samsung or SmartThings account and press `GENERATE NEW TOKEN`. Make sure to select at least the following authorized scopes for your new token:
 
-all devices.
+* List all devices
+* See all devices
+* Control all devices 
 
-If everything is set up correctly, the permissions of your token should look something like this:
+If everything is set up correctly, the scope of your token should look something like this:
 
     MyToken — x:devices:*, l:devices, r:devices:*
     
