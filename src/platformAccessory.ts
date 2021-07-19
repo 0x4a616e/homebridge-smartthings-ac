@@ -8,7 +8,18 @@ export class SmartThingsAirConditionerAccessory {
   private service: Service;
   private device: Device;
 
-  public static readonly requiredCapabilities = ['switch', 'temperatureMeasurement', 'thermostatCoolingSetpoint', 'airConditionerMode'];
+  public static readonly requiredCapabilities = [
+    'switch',
+    'temperatureMeasurement',
+    'thermostatCoolingSetpoint',
+    'airConditionerMode',
+  ];
+
+  private mode = 'auto';
+  private active = false;
+  private currentHumidity = 0;
+  private currentTemperature = 0;
+  private targetTemperature = 0;
 
   constructor(
     private readonly platform: SmartThingsPlatform,
@@ -49,23 +60,44 @@ export class SmartThingsAirConditionerAccessory {
     this.service.getCharacteristic(this.platform.Characteristic.CurrentTemperature)
       .onGet(this.getCurrentTemperature.bind(this));
 
+    this.service.getCharacteristic(this.platform.Characteristic.CurrentRelativeHumidity)
+      .onGet(this.getCurrentHumidity.bind(this));
+
     this.service.getCharacteristic(this.platform.Characteristic.TargetHeaterCoolerState)
       .onGet(this.getHeaterCoolerState.bind(this))
       .onSet(this.setHeaterCoolerState.bind(this));
   }
 
   private async getHeaterCoolerState(): Promise<CharacteristicValue> {
-    const mainComponent = await this.deviceAdapter.getMainComponent();
-    const state = mainComponent['airConditionerMode']['airConditionerMode']['value'];
+    await this.updateStatus();
 
-    return this.fromSmartThingsMode(state as string);
+    return this.fromSmartThingsMode(this.mode);
   }
 
   private async getCoolingTemperature(): Promise<CharacteristicValue> {
-    const mainComponent = await this.deviceAdapter.getMainComponent();
-    const temperature = mainComponent['thermostatCoolingSetpoint']['coolingSetpoint']['value'];
+    await this.updateStatus();
 
-    return temperature as number;
+    return this.targetTemperature;
+  }
+
+  private async getActive(): Promise<CharacteristicValue> {
+    await this.updateStatus();
+
+    return this.active;
+  }
+
+  private async getCurrentTemperature(): Promise<CharacteristicValue> {
+    // Read-only values use cached data, no update
+    return this.currentTemperature;
+  }
+
+  private async getCurrentHumidity(): Promise<CharacteristicValue> {
+    // Read-only values use cached data, no update
+    return this.currentHumidity;
+  }
+
+  private async setActive(value: CharacteristicValue) {
+    this.deviceAdapter.executeMainCommand(value === 1 ? 'on' : 'off', 'switch');
   }
 
   private async setHeaterCoolerState(value: CharacteristicValue) {
@@ -76,23 +108,6 @@ export class SmartThingsAirConditionerAccessory {
 
   private async setCoolingTemperature(value: CharacteristicValue) {
     this.deviceAdapter.executeMainCommand('setCoolingSetpoint', 'thermostatCoolingSetpoint', [value as number]);
-  }
-
-  private async getCurrentTemperature(): Promise<CharacteristicValue> {
-    const mainComponent = await this.deviceAdapter.getMainComponent();
-    const temperature = mainComponent['temperatureMeasurement']['temperature']['value'];
-
-    return temperature as number;
-  }
-
-  private async setActive(value: CharacteristicValue) {
-    this.deviceAdapter.executeMainCommand(value === 1 ? 'on' : 'off', 'switch');
-  }
-
-  private async getActive(): Promise<CharacteristicValue> {
-    const mainComponent = await this.deviceAdapter.getMainComponent();
-
-    return mainComponent['switch']['switch']['value'] === 'on';
   }
 
   private toSmartThingsMode(value: CharacteristicValue): string {
@@ -113,5 +128,17 @@ export class SmartThingsAirConditionerAccessory {
     }
 
     return TargetHeaterCoolerState.AUTO;
+  }
+
+  private async updateStatus() {
+    this.platform.log.debug('Updating status for device', this.device.deviceId);
+
+    const mainComponent = await this.deviceAdapter.getMainComponent();
+
+    this.mode = mainComponent['airConditionerMode']['airConditionerMode']['value'] as string;
+    this.targetTemperature = mainComponent['thermostatCoolingSetpoint']['coolingSetpoint']['value'] as number;
+    this.currentTemperature = mainComponent['temperatureMeasurement']['temperature']['value'] as number;
+    this.currentHumidity = mainComponent['relativeHumidityMeasurement']['humidity']['value'] as number;
+    this.active = mainComponent['switch']['switch']['value'] === 'on';
   }
 }
