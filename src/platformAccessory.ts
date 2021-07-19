@@ -12,6 +12,7 @@ export class SmartThingsAirConditionerAccessory {
     'switch',
     'temperatureMeasurement',
     'thermostatCoolingSetpoint',
+    'relativeHumidityMeasurement',
     'airConditionerMode',
   ];
 
@@ -30,7 +31,7 @@ export class SmartThingsAirConditionerAccessory {
 
     this.accessory.getService(this.platform.Service.AccessoryInformation)!
       .setCharacteristic(this.platform.Characteristic.Manufacturer, this.device.manufacturerName ?? 'unknown')
-      .setCharacteristic(this.platform.Characteristic.Model, this.device.deviceTypeId ?? 'unknown')
+      .setCharacteristic(this.platform.Characteristic.Model, this.device.name ?? 'unknown')
       .setCharacteristic(this.platform.Characteristic.SerialNumber, this.device.presentationId ?? 'unknown');
 
     this.service = this.accessory.getService(this.platform.Service.HeaterCooler)
@@ -57,15 +58,16 @@ export class SmartThingsAirConditionerAccessory {
       .onGet(this.getCoolingTemperature.bind(this))
       .onSet(this.setCoolingTemperature.bind(this));
 
+    this.service.getCharacteristic(this.platform.Characteristic.TargetHeaterCoolerState)
+      .onGet(this.getHeaterCoolerState.bind(this))
+      .onSet(this.setHeaterCoolerState.bind(this));
+
     this.service.getCharacteristic(this.platform.Characteristic.CurrentTemperature)
       .onGet(this.getCurrentTemperature.bind(this));
 
     this.service.getCharacteristic(this.platform.Characteristic.CurrentRelativeHumidity)
       .onGet(this.getCurrentHumidity.bind(this));
 
-    this.service.getCharacteristic(this.platform.Characteristic.TargetHeaterCoolerState)
-      .onGet(this.getHeaterCoolerState.bind(this))
-      .onSet(this.setHeaterCoolerState.bind(this));
   }
 
   private async getHeaterCoolerState(): Promise<CharacteristicValue> {
