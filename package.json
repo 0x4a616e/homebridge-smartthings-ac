@@ -1,7 +1,7 @@
 {
   "displayName": "Homebridge Smartthings AC",
   "name": "homebridge-smartthings-ac",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "description": "Control your Samsung SmartThings AC using Homebridge.",
   "license": "Apache-2.0",
   "repository": {
@@ -23,7 +23,12 @@
     "prepublishOnly": "npm run lint && npm run build"
   },
   "keywords": [
-    "homebridge-plugin"
+    "homebridge-plugin",
+    "smartthings",
+    "homekit",
+    "homebridge",
+    "climate",
+    "air_conditioning"
   ],
   "devDependencies": {
     "@types/node": "^14.14.31",
