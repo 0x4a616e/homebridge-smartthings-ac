@@ -106,6 +106,7 @@ export class SmartThingsAirConditionerAccessory {
       case TargetHeaterCoolerState.AUTO: return 'auto';
     }
 
+    this.platform.log.warn('Illegal heater-cooler state', value);
     return 'auto';
   }
 
@@ -116,6 +117,7 @@ export class SmartThingsAirConditionerAccessory {
       case 'heat': return TargetHeaterCoolerState.HEAT;
     }
 
+    this.platform.log.warn('Received unknown heater-cooler state', state);
     return TargetHeaterCoolerState.AUTO;
   }
 
