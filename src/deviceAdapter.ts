@@ -1,5 +1,6 @@
 import { ComponentStatus, Device, DeviceStatus, SmartThingsClient } from '@smartthings/core-sdk';
 import { Logger } from 'homebridge';
+import { PlatformStatusInfo } from './platformStatusInfo';
 
 export class DeviceAdapter {
   constructor(
@@ -8,8 +9,20 @@ export class DeviceAdapter {
         private readonly client: SmartThingsClient,
   ) {}
 
-  public async getMainComponent(): Promise<ComponentStatus> {
-    const status = await this.getStatus();
+  async getStatus(): Promise<PlatformStatusInfo> {
+    const mainComponent = await this.getMainComponent();
+
+    return {
+      mode: mainComponent['airConditionerMode']['airConditionerMode']['value'] as string,
+      targetTemperature: mainComponent['thermostatCoolingSetpoint']['coolingSetpoint']['value'] as number,
+      currentTemperature: mainComponent['temperatureMeasurement']['temperature']['value'] as number,
+      currentHumidity: mainComponent['relativeHumidityMeasurement']['humidity']['value'] as number,
+      active: mainComponent['switch']['switch']['value'] === 'on',
+    };
+  }
+
+  private async getMainComponent(): Promise<ComponentStatus> {
+    const status = await this.getDeviceStatus();
 
     if (!status.components) {
       throw Error('Cannot get device status');
@@ -17,7 +30,7 @@ export class DeviceAdapter {
     return status.components['main'];
   }
 
-  private getStatus(): Promise<DeviceStatus> {
+  private getDeviceStatus(): Promise<DeviceStatus> {
     if (!this.device.deviceId) {
       throw new Error('Device id must be set.');
     }

@@ -3,6 +3,7 @@ import { TargetHeaterCoolerState } from 'hap-nodejs/dist/lib/definitions';
 import { Service, PlatformAccessory, CharacteristicValue } from 'homebridge';
 import { DeviceAdapter } from './deviceAdapter';
 import { SmartThingsPlatform } from './platform';
+import { PlatformStatusInfo } from './platformStatusInfo';
 
 export class SmartThingsAirConditionerAccessory {
   private service: Service;
@@ -15,12 +16,6 @@ export class SmartThingsAirConditionerAccessory {
     'relativeHumidityMeasurement',
     'airConditionerMode',
   ];
-
-  private mode = 'auto';
-  private active = false;
-  private currentHumidity = 0;
-  private currentTemperature = 0;
-  private targetTemperature = 0;
 
   constructor(
     private readonly platform: SmartThingsPlatform,
@@ -71,31 +66,23 @@ export class SmartThingsAirConditionerAccessory {
   }
 
   private async getHeaterCoolerState(): Promise<CharacteristicValue> {
-    await this.updateStatus();
-
-    return this.fromSmartThingsMode(this.mode);
+    return this.fromSmartThingsMode((await this.getStatus()).mode);
   }
 
   private async getCoolingTemperature(): Promise<CharacteristicValue> {
-    await this.updateStatus();
-
-    return this.targetTemperature;
+    return (await this.getStatus()).targetTemperature;
   }
 
   private async getActive(): Promise<CharacteristicValue> {
-    await this.updateStatus();
-
-    return this.active;
+    return (await this.getStatus()).active;
   }
 
   private async getCurrentTemperature(): Promise<CharacteristicValue> {
-    // Read-only values use cached data, no update
-    return this.currentTemperature;
+    return (await this.getStatus()).currentTemperature;
   }
 
   private async getCurrentHumidity(): Promise<CharacteristicValue> {
-    // Read-only values use cached data, no update
-    return this.currentHumidity;
+    return (await this.getStatus()).currentHumidity;
   }
 
   private async setActive(value: CharacteristicValue) {
@@ -132,15 +119,9 @@ export class SmartThingsAirConditionerAccessory {
     return TargetHeaterCoolerState.AUTO;
   }
 
-  private async updateStatus() {
+  private getStatus(): Promise<PlatformStatusInfo> {
     this.platform.log.debug('Updating status for device', this.device.deviceId);
 
-    const mainComponent = await this.deviceAdapter.getMainComponent();
-
-    this.mode = mainComponent['airConditionerMode']['airConditionerMode']['value'] as string;
-    this.targetTemperature = mainComponent['thermostatCoolingSetpoint']['coolingSetpoint']['value'] as number;
-    this.currentTemperature = mainComponent['temperatureMeasurement']['temperature']['value'] as number;
-    this.currentHumidity = mainComponent['relativeHumidityMeasurement']['humidity']['value'] as number;
-    this.active = mainComponent['switch']['switch']['value'] === 'on';
+    return this.deviceAdapter.getStatus();
   }
 }
