@@ -72,9 +72,11 @@ export class SmartThingsAirConditionerAccessory {
     this.service.getCharacteristic(this.platform.Characteristic.CurrentRelativeHumidity)
       .onGet(this.getCurrentHumidity.bind(this));
 
+    const updateInterval = this.platform.config.updateInterval ?? 15;
+    this.platform.log.debug('Update status every', updateInterval, 'secs');
     setInterval(async () => {
       await this.updateStatus();
-    }, 15000);
+    }, updateInterval * 1000);
   }
 
   private getHeaterCoolerState():CharacteristicValue {
@@ -134,7 +136,11 @@ export class SmartThingsAirConditionerAccessory {
   }
 
   private async updateStatus() {
-    this.deviceStatus = await this.getStatus();
+    try {
+      this.deviceStatus = await this.getStatus();
+    } catch(error) {
+      this.platform.log.error('Error while updating device status', error);
+    }
   }
 
   private async executeCommand(command: string, capability: string, commandArguments?: (string | number)[]) {

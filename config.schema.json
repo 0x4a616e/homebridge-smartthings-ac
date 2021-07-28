@@ -26,6 +26,12 @@
         "default": 30,
         "minimum": 16,
         "maximum": 30
+      },
+      "updateInterval": {
+        "title": "Fetch device status interval (sec)",
+        "type": "integer",
+        "required": true,
+        "default": 15
       }
     }
   }
