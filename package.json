@@ -1,7 +1,7 @@
 {
   "displayName": "Homebridge Smartthings AC",
   "name": "homebridge-smartthings-ac",
-  "version": "1.0.5",
+  "version": "1.0.6",
   "description": "Control your Samsung SmartThings AC using Homebridge.",
   "license": "Apache-2.0",
   "repository": {
