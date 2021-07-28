@@ -31,7 +31,8 @@
         "title": "Fetch device status interval (sec)",
         "type": "integer",
         "required": true,
-        "default": 15
+        "default": 15,
+        "minimum": 5
       }
     }
   }
