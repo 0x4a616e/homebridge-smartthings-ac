@@ -5,6 +5,10 @@ import { DeviceAdapter } from './deviceAdapter';
 import { SmartThingsPlatform } from './platform';
 import { PlatformStatusInfo } from './platformStatusInfo';
 
+const defaultUpdateInterval = 15;
+const defaultMinTemperature = 16;
+const defaultMaxTemperature = 30;
+
 export class SmartThingsAirConditionerAccessory {
   private service: Service;
   private device: Device;
@@ -29,8 +33,8 @@ export class SmartThingsAirConditionerAccessory {
       mode: 'auto',
       active: false,
       currentHumidity: 0,
-      currentTemperature: this.platform.config.minTemperature,
-      targetTemperature: this.platform.config.minTemperature,
+      currentTemperature: this.platform.config.minTemperature ?? defaultMinTemperature,
+      targetTemperature: this.platform.config.minTemperature ?? defaultMinTemperature,
     };
 
     this.accessory.getService(this.platform.Service.AccessoryInformation)!
@@ -47,8 +51,8 @@ export class SmartThingsAirConditionerAccessory {
       .onGet(this.getActive.bind(this));
 
     const temperatureProperties = {
-      maxValue: this.platform.config.maxTemperature,
-      minValue: this.platform.config.minTemperature,
+      maxValue: this.platform.config.maxTemperature ?? defaultMaxTemperature,
+      minValue: this.platform.config.minTemperature ?? defaultMinTemperature,
       minStep: 1,
     };
 
@@ -72,7 +76,7 @@ export class SmartThingsAirConditionerAccessory {
     this.service.getCharacteristic(this.platform.Characteristic.CurrentRelativeHumidity)
       .onGet(this.getCurrentHumidity.bind(this));
 
-    const updateInterval = this.platform.config.updateInterval ?? 15;
+    const updateInterval = this.platform.config.updateInterval ?? defaultUpdateInterval;
     this.platform.log.debug('Update status every', updateInterval, 'secs');
 
     this.updateStatus();
