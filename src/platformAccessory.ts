@@ -9,6 +9,8 @@ export class SmartThingsAirConditionerAccessory {
   private service: Service;
   private device: Device;
 
+  private deviceStatus: PlatformStatusInfo;
+
   public static readonly requiredCapabilities = [
     'switch',
     'temperatureMeasurement',
@@ -23,6 +25,13 @@ export class SmartThingsAirConditionerAccessory {
     private readonly deviceAdapter: DeviceAdapter,
   ) {
     this.device = accessory.context.device as Device;
+    this.deviceStatus = {
+      mode: 'auto',
+      active: false,
+      currentHumidity: 0,
+      currentTemperature: this.platform.config.minTemperature,
+      targetTemperature: this.platform.config.minTemperature,
+    };
 
     this.accessory.getService(this.platform.Service.AccessoryInformation)!
       .setCharacteristic(this.platform.Characteristic.Manufacturer, this.device.manufacturerName ?? 'unknown')
@@ -63,40 +72,43 @@ export class SmartThingsAirConditionerAccessory {
     this.service.getCharacteristic(this.platform.Characteristic.CurrentRelativeHumidity)
       .onGet(this.getCurrentHumidity.bind(this));
 
+    setInterval(async () => {
+      await this.updateStatus();
+    }, 15000);
   }
 
-  private async getHeaterCoolerState(): Promise<CharacteristicValue> {
-    return this.fromSmartThingsMode((await this.getStatus()).mode);
+  private getHeaterCoolerState():CharacteristicValue {
+    return this.fromSmartThingsMode(this.deviceStatus.mode);
   }
 
-  private async getCoolingTemperature(): Promise<CharacteristicValue> {
-    return (await this.getStatus()).targetTemperature;
+  private getCoolingTemperature(): CharacteristicValue {
+    return this.deviceStatus.targetTemperature;
   }
 
-  private async getActive(): Promise<CharacteristicValue> {
-    return (await this.getStatus()).active;
+  private getActive(): CharacteristicValue {
+    return this.deviceStatus.active;
   }
 
-  private async getCurrentTemperature(): Promise<CharacteristicValue> {
-    return (await this.getStatus()).currentTemperature;
+  private getCurrentTemperature(): CharacteristicValue {
+    return this.deviceStatus.currentTemperature;
   }
 
-  private async getCurrentHumidity(): Promise<CharacteristicValue> {
-    return (await this.getStatus()).currentHumidity;
+  private getCurrentHumidity(): CharacteristicValue {
+    return this.deviceStatus.currentHumidity;
   }
 
   private async setActive(value: CharacteristicValue) {
-    this.deviceAdapter.executeMainCommand(value === 1 ? 'on' : 'off', 'switch');
+    await this.executeCommand(value === 1 ? 'on' : 'off', 'switch');
   }
 
   private async setHeaterCoolerState(value: CharacteristicValue) {
     const mode = this.toSmartThingsMode(value);
 
-    this.deviceAdapter.executeMainCommand('setAirConditionerMode', 'airConditionerMode', [ mode ]);
+    await this.executeCommand('setAirConditionerMode', 'airConditionerMode', [ mode ]);
   }
 
   private async setCoolingTemperature(value: CharacteristicValue) {
-    this.deviceAdapter.executeMainCommand('setCoolingSetpoint', 'thermostatCoolingSetpoint', [value as number]);
+    await this.executeCommand('setCoolingSetpoint', 'thermostatCoolingSetpoint', [value as number]);
   }
 
   private toSmartThingsMode(value: CharacteristicValue): string {
@@ -121,9 +133,16 @@ export class SmartThingsAirConditionerAccessory {
     return TargetHeaterCoolerState.AUTO;
   }
 
-  private getStatus(): Promise<PlatformStatusInfo> {
-    this.platform.log.debug('Updating status for device', this.device.deviceId);
+  private async updateStatus() {
+    this.deviceStatus = await this.getStatus();
+  }
 
+  private async executeCommand(command: string, capability: string, commandArguments?: (string | number)[]) {
+    await this.deviceAdapter.executeMainCommand(command, capability, commandArguments);
+    await this.updateStatus();
+  }
+
+  private getStatus(): Promise<PlatformStatusInfo> {
     return this.deviceAdapter.getStatus();
   }
 }
