@@ -74,6 +74,8 @@ export class SmartThingsAirConditionerAccessory {
 
     const updateInterval = this.platform.config.updateInterval ?? 15;
     this.platform.log.debug('Update status every', updateInterval, 'secs');
+
+    this.updateStatus();
     setInterval(async () => {
       await this.updateStatus();
     }, updateInterval * 1000);
@@ -100,17 +102,39 @@ export class SmartThingsAirConditionerAccessory {
   }
 
   private async setActive(value: CharacteristicValue) {
-    await this.executeCommand(value === 1 ? 'on' : 'off', 'switch');
+    const isActive = value === 1;
+
+    try {
+      await this.executeCommand(isActive ? 'on' : 'off', 'switch');
+      this.deviceStatus.active = isActive;
+    } catch(error) {
+      this.platform.log.error('Cannot set device active', error);
+      await this.updateStatus();
+    }
   }
 
   private async setHeaterCoolerState(value: CharacteristicValue) {
     const mode = this.toSmartThingsMode(value);
 
-    await this.executeCommand('setAirConditionerMode', 'airConditionerMode', [ mode ]);
+    try {
+      await this.executeCommand('setAirConditionerMode', 'airConditionerMode', [ mode ]);
+      this.deviceStatus.mode = mode;
+    } catch(error) {
+      this.platform.log.error('Cannot set device mode', error);
+      await this.updateStatus();
+    }
   }
 
   private async setCoolingTemperature(value: CharacteristicValue) {
-    await this.executeCommand('setCoolingSetpoint', 'thermostatCoolingSetpoint', [value as number]);
+    const targetTemperature = value as number;
+
+    try {
+      await this.executeCommand('setCoolingSetpoint', 'thermostatCoolingSetpoint', [targetTemperature]);
+      this.deviceStatus.targetTemperature = targetTemperature;
+    } catch(error) {
+      this.platform.log.error('Cannot set device temperature', error);
+      await this.updateStatus();
+    }
   }
 
   private toSmartThingsMode(value: CharacteristicValue): string {
@@ -145,7 +169,6 @@ export class SmartThingsAirConditionerAccessory {
 
   private async executeCommand(command: string, capability: string, commandArguments?: (string | number)[]) {
     await this.deviceAdapter.executeMainCommand(command, capability, commandArguments);
-    await this.updateStatus();
   }
 
   private getStatus(): Promise<PlatformStatusInfo> {
