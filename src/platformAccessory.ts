@@ -77,7 +77,7 @@ export class SmartThingsAirConditionerAccessory {
       .onGet(this.getCurrentHumidity.bind(this));
 
     const updateInterval = this.platform.config.updateInterval ?? defaultUpdateInterval;
-    this.platform.log.debug('Update status every', updateInterval, 'secs');
+    this.platform.log.info('Update status every', updateInterval, 'secs');
 
     this.updateStatus();
     setInterval(async () => {
