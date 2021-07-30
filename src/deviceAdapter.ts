@@ -13,11 +13,11 @@ export class DeviceAdapter {
     const mainComponent = await this.getMainComponent();
 
     return {
-      mode: mainComponent['airConditionerMode']['airConditionerMode']['value'] as string,
-      targetTemperature: mainComponent['thermostatCoolingSetpoint']['coolingSetpoint']['value'] as number,
-      currentTemperature: mainComponent['temperatureMeasurement']['temperature']['value'] as number,
-      currentHumidity: mainComponent['relativeHumidityMeasurement']['humidity']['value'] as number,
-      active: mainComponent['switch']['switch']['value'] === 'on',
+      mode: mainComponent?.['airConditionerMode']?.['airConditionerMode']?.['value'] as string,
+      targetTemperature: mainComponent?.['thermostatCoolingSetpoint']?.['coolingSetpoint']?.['value'] as number,
+      currentTemperature: mainComponent?.['temperatureMeasurement']?.['temperature']?.['value'] as number,
+      currentHumidity: mainComponent?.['relativeHumidityMeasurement']?.['humidity']?.['value'] as number,
+      active: mainComponent?.['switch']?.['switch']?.['value'] === 'on',
     };
   }
 
