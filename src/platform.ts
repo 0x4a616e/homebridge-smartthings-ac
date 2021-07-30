@@ -2,7 +2,7 @@ import { API, DynamicPlatformPlugin, Logger, PlatformAccessory, PlatformConfig, 
 
 import { PLATFORM_NAME, PLUGIN_NAME } from './settings';
 import { SmartThingsAirConditionerAccessory } from './platformAccessory';
-import {BearerTokenAuthenticator, Device, Component, CapabilityReference, SmartThingsClient} from '@smartthings/core-sdk';
+import { BearerTokenAuthenticator, Device, Component, CapabilityReference, SmartThingsClient } from '@smartthings/core-sdk';
 import { DeviceAdapter } from './deviceAdapter';
 
 
@@ -52,7 +52,7 @@ export class SmartThingsPlatform implements DynamicPlatformPlugin {
 
   private getMissingCapabilities(capabilities: string[]): string[] {
     return SmartThingsAirConditionerAccessory.requiredCapabilities
-      .filter( ( el ) => !capabilities.includes( el ) );
+      .filter((el) => !capabilities.includes(el));
   }
 
   private handleSupportedDevice(device: Device) {
