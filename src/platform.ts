@@ -38,19 +38,21 @@ export class SmartThingsPlatform implements DynamicPlatformPlugin {
     for (const device of devices) {
       if (device.components) {
         const capabilities = this.getCapabilities(device);
-        if (device.deviceId && this.isSupportedBy(capabilities) ) {
+        const missingCapabilities = this.getMissingCapabilities(capabilities);
+
+        if (device.deviceId && missingCapabilities.length === 0) {
           this.log.info('Registering device', device.deviceId);
           this.handleSupportedDevice(device);
         } else {
-          this.log.info('Skipping device', device.deviceId, device.label);
+          this.log.info('Skipping device', device.deviceId, device.label, 'Missing capabilities', missingCapabilities);
         }
       }
     }
   }
 
-  private isSupportedBy(capabilities: string[]) {
-    return SmartThingsAirConditionerAccessory.requiredCapabilities.every(
-      (requiredCapability: string) => capabilities.includes(requiredCapability));
+  private getMissingCapabilities(capabilities: string[]): string[] {
+    return SmartThingsAirConditionerAccessory.requiredCapabilities
+      .filter( ( el ) => !capabilities.includes( el ) );
   }
 
   private handleSupportedDevice(device: Device) {
