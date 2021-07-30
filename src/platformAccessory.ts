@@ -1,4 +1,4 @@
-import { Device } from '@smartthings/core-sdk';
+import { CapabilityReference, Component, Device } from '@smartthings/core-sdk';
 import { TargetHeaterCoolerState } from 'hap-nodejs/dist/lib/definitions';
 import { Service, PlatformAccessory, CharacteristicValue } from 'homebridge';
 import { DeviceAdapter } from './deviceAdapter';
@@ -19,7 +19,6 @@ export class SmartThingsAirConditionerAccessory {
     'switch',
     'temperatureMeasurement',
     'thermostatCoolingSetpoint',
-    'relativeHumidityMeasurement',
     'airConditionerMode',
   ];
 
@@ -73,8 +72,13 @@ export class SmartThingsAirConditionerAccessory {
     this.service.getCharacteristic(this.platform.Characteristic.CurrentTemperature)
       .onGet(this.getCurrentTemperature.bind(this));
 
-    this.service.getCharacteristic(this.platform.Characteristic.CurrentRelativeHumidity)
-      .onGet(this.getCurrentHumidity.bind(this));
+    if (this.hasCapability('relativeHumidityMeasurement')) {
+      this.platform.log.debug('Registering current relative humidity characteristic for device', this.device.deviceId);
+      this.service.getCharacteristic(this.platform.Characteristic.CurrentRelativeHumidity)
+        .onGet(this.getCurrentHumidity.bind(this));
+    } else {
+      this.platform.log.info('Current relative humidity will not be available for device', this.device.deviceId);
+    }
 
     const updateInterval = this.platform.config.updateInterval ?? defaultUpdateInterval;
     this.platform.log.info('Update status every', updateInterval, 'secs');
@@ -83,6 +87,13 @@ export class SmartThingsAirConditionerAccessory {
     setInterval(async () => {
       await this.updateStatus();
     }, updateInterval * 1000);
+  }
+
+  private hasCapability(id: string): boolean {
+    return !!this.device.components
+      ?.filter((component: Component) => component.id === 'main')
+      ?.flatMap((component: Component) => component.capabilities)
+      ?.find((capabilityReference: CapabilityReference) => capabilityReference.id === id);
   }
 
   private getHeaterCoolerState():CharacteristicValue {
