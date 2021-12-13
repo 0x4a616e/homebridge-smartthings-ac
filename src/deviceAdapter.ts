@@ -18,6 +18,7 @@ export class DeviceAdapter {
       currentTemperature: mainComponent?.['temperatureMeasurement']?.['temperature']?.['value'] as number,
       currentHumidity: mainComponent?.['relativeHumidityMeasurement']?.['humidity']?.['value'] as number,
       active: mainComponent?.['switch']?.['switch']?.['value'] === 'on',
+      fanMode: mainComponent?.['airConditionerFanMode']?.['fanMode']?.['value'] as string,
     };
   }
 

@@ -34,6 +34,7 @@ export class SmartThingsAirConditionerAccessory {
       currentHumidity: 0,
       currentTemperature: this.platform.config.minTemperature ?? defaultMinTemperature,
       targetTemperature: this.platform.config.minTemperature ?? defaultMinTemperature,
+      fanMode: 'auto',
     };
 
     this.accessory.getService(this.platform.Service.AccessoryInformation)!
@@ -80,6 +81,13 @@ export class SmartThingsAirConditionerAccessory {
       this.platform.log.info('Current relative humidity will not be available for device', this.device.deviceId);
     }
 
+    if (this.hasCapability('airConditionerFanMode')) {
+      this.platform.log.debug('Registering rotation speed characteristic for device', this.device.deviceId);
+      this.service.getCharacteristic(this.platform.Characteristic.RotationSpeed)
+        .onGet(this.getRotationSpeed.bind(this))
+        .onSet(this.setRotationSpeed.bind(this));
+    }
+
     const updateInterval = this.platform.config.updateInterval ?? defaultUpdateInterval;
     this.platform.log.info('Update status every', updateInterval, 'secs');
 
@@ -114,6 +122,10 @@ export class SmartThingsAirConditionerAccessory {
 
   private getCurrentHumidity(): CharacteristicValue {
     return this.deviceStatus.currentHumidity;
+  }
+
+  private getRotationSpeed():CharacteristicValue {
+    return this.fromSmartThingsFanSpeed(this.deviceStatus.fanMode);
   }
 
   private async setActive(value: CharacteristicValue) {
@@ -172,6 +184,52 @@ export class SmartThingsAirConditionerAccessory {
 
     this.platform.log.warn('Received unknown heater-cooler state', state);
     return TargetHeaterCoolerState.AUTO;
+  }
+
+  private async setRotationSpeed(value: CharacteristicValue) {
+    const mode = this.toSmartThingsFanSpeed(value);
+
+    try {
+      await this.executeCommand('setFanMode', 'airConditionerFanMode', [ mode ]);
+      this.deviceStatus.fanMode = mode;
+    } catch(error) {
+      this.platform.log.error('Cannot set device mode', error);
+      await this.updateStatus();
+    }
+  }
+
+  private toSmartThingsFanSpeed(value: CharacteristicValue): string {
+    const mappedValue = value as number;
+
+    const closestValue = [0, 25, 50, 75, 100].reduce((prev, curr) => {
+      return (Math.abs(curr - mappedValue) < Math.abs(prev - mappedValue) ? curr : prev);
+    });
+
+    this.platform.log.debug('to', closestValue);
+    switch (closestValue) {
+      case 0: return 'auto';
+      case 25: return 'low';
+      case 50: return 'medium';
+      case 75: return 'high';
+      case 100: return 'turbo';
+    }
+
+    this.platform.log.warn('Received unknown fan speed', value);
+    return 'auto';
+  }
+
+  private fromSmartThingsFanSpeed(state: string): CharacteristicValue {
+    this.platform.log.debug('from', state);
+    switch (state) {
+      case 'auto': return 0;
+      case 'low': return 25;
+      case 'medium': return 50;
+      case 'high': return 75;
+      case 'turbo': return 100;
+    }
+
+    this.platform.log.warn('Received unknown fan speed', state);
+    return 0;
   }
 
   private async updateStatus() {

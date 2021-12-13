@@ -2,6 +2,8 @@
 
 Control you Samsung SmartThings air conditioner with HomeKit using HomeBridge.
 
+This plugin is not affiliated with Samsung!
+
 <img src="assets/homekit_ac.png" width="300">
 
 ## Setup the Plugin

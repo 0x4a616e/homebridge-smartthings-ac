@@ -4,4 +4,5 @@ export interface PlatformStatusInfo {
    currentHumidity: number;
    currentTemperature: number;
    targetTemperature: number;
+   fanMode: string;
 }
