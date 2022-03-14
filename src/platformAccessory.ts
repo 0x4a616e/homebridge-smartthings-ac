@@ -177,9 +177,17 @@ export class SmartThingsAirConditionerAccessory {
   private async updateStatus() {
     try {
       this.deviceStatus = await this.getStatus();
-    } catch(error) {
-      this.platform.log.error('Error while updating device status', error);
+    } catch(error: unknown) {
+      this.platform.log.error('Error while fetching device status: ' + this.getErrorMessage(error));
+      this.platform.log.debug('Caught error', error);
     }
+  }
+
+  private getErrorMessage(error: unknown): string {
+    if (error instanceof Error) {
+      return error.message;
+    }
+    return String(error);
   }
 
   private async executeCommand(command: string, capability: string, commandArguments?: (string | number)[]) {
